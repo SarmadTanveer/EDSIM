@@ -90,19 +90,19 @@ class EDModel:
             # call bed_assignment and activate it with patient
             # bed_assignment empty for now
             # later create special ressucetion bed def
-            self.env.process(self.bed_assignment(patient))
+            yield self.env.process(self.bed_assignment(patient))
             pass
         else:  # if not go thought the ED normally
             # call CTAS_assessment and activate it with patient
-            self.env.process(self.ctas_assessment(patient))
+            yield self.env.process(self.ctas_assessment(patient))
 
             # call ED_Registration and activate it with patient
             # ED_Registration empty for now
-            self.env.process(self.ed_registration(patient))
+            yield self.env.process(self.ed_registration(patient))
 
             # call bed_assignment and activate it with patient
             # bed_assignment empty for now
-            self.env.process(self.bed_assignment(patient))
+            yield self.env.process(self.bed_assignment(patient))
 
 
     # after arriving at hospital patient gets its CTAS assessment
@@ -157,7 +157,7 @@ class EDModel:
 
         # release nurse but keep the bed
         # call treatment and activate it with patient
-        self.env.process(self.treatment(patient))
+        yield self.env.process(self.treatment(patient))
 
     def treatment(self,patient):
 
