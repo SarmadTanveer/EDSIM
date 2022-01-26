@@ -1,0 +1,58 @@
+[33mcommit d92edad73e0a1373c81bc5999e7a513034e93dfd[m[33m ([m[1;36mHEAD -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m
+Merge: 886a893 1d4143e
+Author: SarmadTanveer <59303670+SarmadTanveer@users.noreply.github.com>
+Date:   Sun Jan 23 17:43:29 2022 -0500
+
+    Merge pull request #7 from SarmadTanveer/issue_1
+    
+    Issue 1
+
+[33mcommit 1d4143ea754239a8c1060a4ca2f9ecdd5c945883[m[33m ([m[1;31morigin/issue_1[m[33m, [m[1;32missue_1[m[33m)[m
+Author: Sarmad <tanveer.sarmad@gmail.com>
+Date:   Sun Jan 23 17:39:36 2022 -0500
+
+    committing libraries changes after adding data.py
+
+[33mcommit eb5df1a74e8b989c4dd527eaa3f61f0bb9cdf7ff[m
+Author: Sarmad <tanveer.sarmad@gmail.com>
+Date:   Sun Jan 23 17:38:55 2022 -0500
+
+    added data class to hold all simulation parameters
+
+[33mcommit 886a8930021454ce5efa5a53036bfbab40bd5142[m
+Author: Rchramos <98285467+Rchramos@users.noreply.github.com>
+Date:   Sun Jan 23 17:11:47 2022 -0500
+
+    Update ED_Model.py
+
+[33mcommit 85665299d49892639dfc3b96bfcad00ea0f449ff[m
+Merge: 641237f b1cdc75
+Author: SarmadTanveer <59303670+SarmadTanveer@users.noreply.github.com>
+Date:   Sun Jan 23 16:22:40 2022 -0500
+
+    Merge pull request #6 from SarmadTanveer/SarmadTanveer/issue5
+
+[33mcommit b1cdc757f22a805ff3e2810d847ee29fbceed9ba[m[33m ([m[1;31morigin/SarmadTanveer/issue5[m[33m)[m
+Author: Sarmad <tanveer.sarmad@gmail.com>
+Date:   Sun Jan 23 16:19:50 2022 -0500
+
+    create example
+    Fixes #5
+
+[33mcommit 641237f07ec2ee23bf54f35c595d2d2c59810934[m
+Author: Rchramos <98285467+Rchramos@users.noreply.github.com>
+Date:   Sun Jan 23 16:18:16 2022 -0500
+
+    Update ED_Model.py
+
+[33mcommit f193b5ae1dd14b34b3f99e7eef3f2524148a695f[m
+Author: Rchramos <98285467+Rchramos@users.noreply.github.com>
+Date:   Sun Jan 23 16:17:25 2022 -0500
+
+    Add files via upload
+
+[33mcommit 5742813a428121c10c92ed4936a4992b7496a9a5[m
+Author: SarmadTanveer <59303670+SarmadTanveer@users.noreply.github.com>
+Date:   Sun Jan 23 15:21:23 2022 -0500
+
+    Initial commit
