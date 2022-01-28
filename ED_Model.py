@@ -2,6 +2,8 @@
 import simpy
 import random
 from ED_Patient import Patient
+from functools import partial
+from Reource_monitor import patch_resource, monitor
 
 
 # start of global class g
@@ -13,9 +15,16 @@ class g:
     mean_ed_registration = 6
     mean_bdassig = 7
     mean_treat = 8
-    sim_duration = 120
+    sim_duration = 120 # In minutes
     number_of_runs = 1
     inter = 10
+
+    # resource values
+    nurse_quantity = 3
+    doctor_quantity = 1
+    regular_beds_quantity = 1
+    resuscitation_beds_quantity = 1
+    equipments_quantity = 1
 
     # CTAS levels percentage
     ctas_dist = {1: 0.2, 2: 0.3, 3: 0.1, 4: 0.1, 5: 0.3}
@@ -33,11 +42,11 @@ class EDModel:
         self.env = simpy.Environment()
 
         # set up resources
-        self.nurse = simpy.PriorityResource(self.env, capacity=1)
-        self.doctor = simpy.PriorityResource(self.env, capacity=1)
-        self.regular_beds = simpy.PriorityResource(self.env, capacity=1)
-        self.resuscitation_beds = simpy.PriorityResource(self.env, capacity=1)
-        self.equipments = simpy.PriorityResource(self.env, capacity=1)
+        self.nurse = simpy.PriorityResource(self.env, capacity=g.nurse_quantity)
+        self.doctor = simpy.PriorityResource(self.env, capacity=g.doctor_quantity)
+        self.regular_beds = simpy.PriorityResource(self.env, capacity=g.regular_beds_quantity)
+        self.resuscitation_beds = simpy.PriorityResource(self.env, capacity=g.resuscitation_beds_quantity)
+        self.equipments = simpy.PriorityResource(self.env, capacity=g.equipments_quantity)
 
     # this generates patients that walked in the ED
     def generate_walk_in_arrivals(self):
@@ -101,7 +110,7 @@ class EDModel:
     def ctas_assessment(self,patient):
         # print patient ID and arrival at ED
         patient.set_arrival_time(self.env.now)
-        print("Patient ", patient.id, " CTAS:", patient.CTAS_Level, " started queueing at ", self.env.now, sep="")
+        print("Patient ", patient.id, " CTAS:", patient.CTAS_Level, " started queueing at ctas_assessment at ", self.env.now, sep="")
 
         # request a nurse
         with self.nurse.request(priority=patient.CTAS_Level) as req:
@@ -109,7 +118,7 @@ class EDModel:
             yield req
 
             time_to_begin_ctas_assessment = self.env.now - patient.arrival_time
-            print("Patient ", patient.id, " CTAS:", patient.CTAS_Level, " time differemce: ", time_to_begin_ctas_assessment, " got CTAS nurse at ", self.env.now, sep="")
+            print("Patient ", patient.id, " CTAS:", patient.CTAS_Level, " time differemce to begin ctas assessment: ", time_to_begin_ctas_assessment, " got CTAS nurse at ", self.env.now, sep="")
 
             # sampled_xxxx_duration is getting a random value from the mean and then
             # is going to wait that time until it concluded and with that releases the nurse
@@ -201,9 +210,14 @@ class EDModel:
         self.env.process(self.generate_ambulance_arrivals())
         self.env.run(until=g.sim_duration)
 
-
+data = []
+monitor = partial(monitor, data)
 for run in range(g.number_of_runs):
     print ("Run ", run+1, " of ", g.number_of_runs, sep="")
     my_ed_model = EDModel()
+    patch_resource(my_ed_model.nurse, post=monitor)  # Patches (only) this resource instance
     my_ed_model.run()
     print("\n")
+    print(data)
+    # before cleaning the data do the necessary calculations and save it
+    data.clear()
