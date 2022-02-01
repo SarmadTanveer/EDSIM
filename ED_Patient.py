@@ -6,6 +6,8 @@ import random
 class Patient:
     p_id = 0
     arrival_time = 0
+    los = 0 
+
 
     def __init__(self, ctas_dist):
         self.id = self.p_id
@@ -32,6 +34,8 @@ class Patient:
             ctas_level = 4
         
         return ctas_level
+    
+    #Output if the patient is code red i.e needs resuscitation 
 
     def set_arrival_time(self, arrival_time):
         self.arrival_time = arrival_time
@@ -50,13 +54,13 @@ class ambulancePatient(Patient):
         # call super
         super().__init__(ctas_dist)
 
-# Pateint Test
+#Pateint Test
 #ctas_dist = {1:0.2, 2: 0.3, 3: 0.1, 4:0.1, 5: 0.3}
 
-# for i in range (0,100):
-#    wp = Patient(ctas_dist)
-#    print("CTAS level for walkin pateint ", wp.id, " : ", wp.CTAS_Level, sep = "")
-
+#for i in range (0,1):
+    #wp = walkInPatient(ctas_dist)
+    #print("CTAS level for walkin pateint ", wp.id, " : ", wp.CTAS_Level, sep = "")
+    #print(isinstance(wp, walkInPatient))
 #for i in range(0,100):
 #    ap = ambulancePatient(ctas_dist)
 #    print("CTAS level for ambulance patient ", ap.id, " : ",ap.CTAS_Level, sep="")
