@@ -116,12 +116,15 @@ class Patient:
         self.registration_wt = self.registration_time - self.registration_time_arrival
         self.registration_total_time = self.registration_time_end - self.registration_time_arrival
 
+        
         self.bed_assignment_wt_bed = self.bed_assignment_time_bed - self.bed_assignment_time_arrival
         self.bed_assignment_wt_nurse = self.bed_assignment_time_nurse - self.bed_assignment_time_bed
+        self.bed_assignment_time_wt = self.bed_assignment_wt_bed + self.bed_assignment_wt_nurse
         self.bed_assignment_time = self.bed_assignment_time_end - self.bed_assignment_time_arrival
 
         self.resuscitation_wt_bed = self.resuscitation_time_bed - self.bed_assignment_time_arrival
         self.resuscitation_wt_nurse_doctor = self.resuscitation_time_nurse_doctor - self.resuscitation_time_bed
+        self.resuscitation_time_wt = self.resuscitation_wt_bed + self.resuscitation_wt_nurse_doctor
         self.resuscitation_time = self.resuscitation_time_end - self.resuscitation_time_arrival
 
         self.initial_assessment_wt = self.initial_assessment_time_doctor - self.initial_assessment_time_arrival
@@ -132,7 +135,31 @@ class Patient:
 
         self.discharge_decision_total_time = self.discharge_decision_time_leaving - self.discharge_decision_time_arrival
 
+    def convertToDict(self):
+        data = {'Patient ID': self.id, 
+                'Run ID': self.run_id, 
+                'CTAS': self.CTAS_Level, 
+                'Type': "ambulance" if isinstance(self, ambulancePatient) else "walkin", 
+                'Arrival': self.arrival_time, 
+                'los': self.los, 
+                'Priority Assessment Queue Time ': self.priority_assessment_wt, 
+                'CTAS Assessment Queue Time': self.ctas_assessment_wt, 
+                'Registration Queue Time': self.registration_wt, 
+                'Bed Assignment Queue Time': self.bed_assignment_time_wt, 
+                'Resuscitation Queue Time': self.resuscitation_time_wt,  
+                'Initial Assessment Queue Time': self.initial_assessment_wt, 
+                'Treatment Queue Time': self.treatment_wt, 
+                'Discharge Time': self.discharge_decision_total_time, 
 
+                'Resuscitation Bed Queueing Time': self.resuscitation_wt_bed, 
+                'Resuscitation Queing Nurse/Doctor': self.resuscitation_time_nurse_doctor, 
+
+
+                'Bed Assignment Queue for Nurse': self.bed_assignment_wt_nurse, 
+                'Bed Assignment Queue for Bed': self.bed_assignment_wt_bed 
+        }
+
+        return data
 class walkInPatient(Patient):
 
     def __init__(self, ctas_dist):

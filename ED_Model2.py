@@ -4,7 +4,37 @@ import random
 from ED_Patient import Patient, ambulancePatient, walkInPatient
 from functools import partial
 from Reource_monitor import patch_resource, monitor
+import pandas as pd
 
+class Writer: 
+    
+
+    def ConvertToDataFrame(runList):
+        
+        patientData = pd.DataFrame(runList)
+        print(patientData)
+        print(patientData.columns)
+        print(patientData.shape)
+        print(patientData.dtypes)
+        print(patientData.describe())
+        return patientData
+       
+    #def addPatientToLOS(self, patient):
+    #def addPatientiToRQT(self,patient):
+    #def getAllData(self):
+    #def cleanFrame(self):
+    def writeToCsv(patientData):
+        patientData.to_csv('data.csv',index = False)
+
+    #def calcAvgPatientsPerRun(patientData): 
+
+    #def getNumPatientsByCTAS(patientData): 
+
+    #def getAvgLOS(patientData): 
+
+    
+
+    #def getData(Name): 
 
 # start of global class g
 # just for test, will probally be deleted later
@@ -69,7 +99,11 @@ class EDModel:
         self.regular_beds = simpy.PriorityResource(self.env, capacity=parameters.bedCap)
         self.resuscitation_beds = simpy.PriorityResource(self.env, capacity=parameters.rBedCap)
         
+        #initial parameters
         self.parameters = parameters
+
+        #list of patients during this run 
+        self.patientList = []
 
 
     # this generates patients that walked in the ED
@@ -374,6 +408,10 @@ class EDModel:
 
         patient.discharge_decision_time_leaving = self.env.now
         patient.calculate_Times()
+        
+        self.patientList.append(patient.convertToDict())
+
+        
     
     #snapshot evey 5 minutes
     #def snapshot(self):
@@ -383,23 +421,30 @@ class EDModel:
     
     def run(self):
 
-        self.env.process(self.generate_walk_in_arrivals(2))
-        self.env.process(self.generate_ambulance_arrivals(2))
+        self.env.process(self.generate_walk_in_arrivals(50))
+        self.env.process(self.generate_ambulance_arrivals(50))
         #self.env.process(self.snapshot())
         self.env.run()
+        return self.patientList
 
 def runSim(simParameters):
     parameters = Data(simParameters)
+    runList = []
     for run in range(parameters.iterations):
         print('--------------------------------------------------------------------------------')
         print("Run ", run + 1, " of ", parameters.iterations, sep="")
         ed_model = EDModel(parameters)
-        ed_model.run()
+        patientList = ed_model.run()
+        runList.extend(patientList)
+        
+        print(runList)    
         Patient.p_id = 0
         Patient.run_id += 1
         print('--------------------------------------------------------------------------------')
         #ed model.run(until=parameters.length)
 
+    df = Writer.ConvertToDataFrame(runList=runList)
+    Writer.writeToCsv(df)
 simParameters = {
     'resCapacity': {
         'doctor':1, 
@@ -441,7 +486,7 @@ simParameters = {
         }
 
     }, 
-    'iter':2,
+    'iter':100,
     'warmUp':0, 
     'length':20
 }
