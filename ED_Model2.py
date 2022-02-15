@@ -4,7 +4,37 @@ import random
 from ED_Patient import Patient, ambulancePatient, walkInPatient
 from functools import partial
 from Reource_monitor import patch_resource, monitor
+import pandas as pd
 
+class Writer: 
+    
+
+    def ConvertToDataFrame(runList):
+        
+        patientData = pd.DataFrame(runList)
+        print(patientData)
+        print(patientData.columns)
+        print(patientData.shape)
+        print(patientData.dtypes)
+        print(patientData.describe())
+        return patientData
+       
+    #def addPatientToLOS(self, patient):
+    #def addPatientiToRQT(self,patient):
+    #def getAllData(self):
+    #def cleanFrame(self):
+    def writeToCsv(patientData):
+        patientData.to_csv('data.csv',index = False)
+
+    #def calcAvgPatientsPerRun(patientData): 
+
+    #def getNumPatientsByCTAS(patientData): 
+
+    #def getAvgLOS(patientData): 
+
+    
+
+    #def getData(Name): 
 
 # start of global class g
 # just for test, will probally be deleted later
@@ -40,7 +70,7 @@ class Data:
         self.iterations = simParameters['iter']
 
         #Warm up Period
-        self.iterations = simParameters['warmUp']
+        self.warmUp = simParameters['warmUp']
 
         #Length of Sim
         self.length = simParameters['length']
@@ -69,7 +99,11 @@ class EDModel:
         self.regular_beds = simpy.PriorityResource(self.env, capacity=parameters.bedCap)
         self.resuscitation_beds = simpy.PriorityResource(self.env, capacity=parameters.rBedCap)
         
+        #initial parameters
         self.parameters = parameters
+
+        #list of patients during this run 
+        self.patientList = []
 
 
     # this generates patients that walked in the ED
@@ -116,7 +150,10 @@ class EDModel:
 
     # Cover from priority assessment to bed assigment
     def emergency_department_process(self, patient):
-        
+
+        # Take the arrival time here because all patients pass through here so it is easier
+        patient.arrival_time = self.env.now
+
         #walk in patient goes through priority assessment
         if isinstance(patient, walkInPatient): 
             
@@ -141,9 +178,10 @@ class EDModel:
     
     # Priority assessment Code red or blue 
     def priority_assessment(self, patient):
-        #patient enters queue  
+        #patient enters queue
         arrival = self.env.now
         print(f"Patient {patient.id} with CTAS level {patient.CTAS_Level} has entered the priority assessment queue at {arrival} mins")
+
 
         with self.nurse.request(priority=self.highPrio) as req: 
             #wait till nurse is available 
@@ -151,9 +189,11 @@ class EDModel:
 
             #nurse is available and patient can be seen by nurse
             print(f"Patient {patient.id} with CTAS level has left the priority assessment queue at {self.env.now}  mins")
-            
-            #this is how long the patient waited for the nurse 
-            PQT = self.env.now - arrival
+
+            #this is how long the patient waited for the nurse
+            patient.priority_assessment_time = self.env.now  # do we really need a set function?
+            PQT = patient.priority_assessment_time - patient.arrival_time
+            print(f"Patient {patient.id} waited {PQT} mins for the nurse")
 
             #this is how we save queing time in the patient class 
             #patient.PQT['priorAssessment'] = PQT
@@ -161,7 +201,8 @@ class EDModel:
             #nurse takes time to assess 
             sampled_service_time = random.expovariate(1.0/self.parameters.priorAssessment)
             yield self.env.timeout(sampled_service_time)
-        
+
+        patient.priority_assessment_time_end = self.env.now
         print(f"Patient {patient.id} with CTAS level {patient.CTAS_Level} has gone through priority assessment at {self.env.now} mins")
 
         if patient.CTAS_Level == 1: 
@@ -179,7 +220,8 @@ class EDModel:
 
     # after priority assessment patient gets ctas assessed
     def ctas_assessment(self,patient):
-        #patient enters queue  
+        #patient enters queue
+        patient.ctas_assessment_time_arrival = self.env.now
         arrival = self.env.now
         print(f"Patient {patient.id} with CTAS level {patient.CTAS_Level} has entered the ctas assessment queue at {arrival} mins")
 
@@ -191,19 +233,23 @@ class EDModel:
             print(f"Patient {patient.id} with CTAS level {patient.CTAS_Level} has left the ctas assessment queue at {self.env.now} mins")
             
             #this is how long the patient waited for the nurse 
-            PQT = self.env.now - arrival
+            patient.ctas_assessment_time = self.env.now
+            PQT = patient.ctas_assessment_time - patient.ctas_assessment_time_arrival
+            print(f"Patient {patient.id} waited {PQT} mins for the nurse")
 
             # sampled_xxxx_duration is getting a random value from the mean and then
             # is going to wait that time until it concluded and with that releases the nurse
             sampled_service_time = random.expovariate(1.0 / self.parameters.ctasAssessment)
             yield self.env.timeout(sampled_service_time)
+        patient.ctas_assessment_time_end = self.env.now
         print(f"Patient {patient.id} with CTAS level {patient.CTAS_Level} has gone through CTAS assessment at {self.env.now} mins")
 
         #add patient to registration queue i.e waiting area 1 
         self.env.process(self.registration(patient)) 
 
     def registration(self,patient):
-        #patient enters queue  
+        #patient enters queue
+        patient.registration_time_arrival = self.env.now
         arrival = self.env.now
         print(f"Patient {patient.id} with CTAS level {patient.CTAS_Level} has entered the registration queue at {arrival} mins")
 
@@ -215,18 +261,22 @@ class EDModel:
             print(f"Patient {patient.id} with CTAS level {patient.CTAS_Level} has left the registration queue at {self.env.now} mins")
             
             #this is how long the patient waited for the nurse 
-            PQT = self.env.now - arrival
+            patient.registration_time = self.env.now
+            PQT = patient.registration_time - patient.registration_time_arrival
+            print(f"Patient {patient.id} waited {PQT} mins for the nurse")
 
             # sampled_xxxx_duration is getting a random value from the mean and then
             # is going to wait that time until it concluded and with that releases the nurse
             sampled_service_time = random.expovariate(1.0 / self.parameters.registration)
             yield self.env.timeout(sampled_service_time)
+        patient.registration_time_end = self.env.now
         print(f"Patient {patient.id} with CTAS level {patient.CTAS_Level} has gone through registration at {self.env.now} mins")
         #add patient to bed assignment queue i.e waiting area 2
         self.env.process(self.bed_assignment(patient))
 
     def bed_assignment(self,patient):
-         #patient enters queue  
+        #patient enters queue
+        patient.bed_assignment_time_arrival = self.env.now
         arrival = self.env.now
         print(f"Patient {patient.id} with CTAS level {patient.CTAS_Level} has entered the bed assignment queue at {arrival} mins")
 
@@ -239,8 +289,9 @@ class EDModel:
         #bed is available and has been locked 
         print(f"Bed is availble at {self.env.now} for Patient {patient.id} with CTAS level {patient.CTAS_Level}")
         
-        #resource queueing time: regular bed  
-        RQT = self.env.now - arrival 
+        #resource queueing time: regular bed
+        patient.bed_assignment_time_bed = self.env.now
+        RQT = patient.bed_assignment_time_bed - patient.bed_assignment_time_arrival
         #patient.rqt['regularbed'] = RQT
 
         #request a nurse 
@@ -249,7 +300,9 @@ class EDModel:
                 yield req
 
                 #nurse is available 
-                PQT = self.env.now - arrival
+                patient.bed_assignment_time_nurse = self.env.now
+                PQT = patient.bed_assignment_time_nurse - patient.bed_assignment_time_arrival
+                print(f"Patient {patient.id} waited {PQT} mins for the nurse")
 
                 print(f"Patient {patient.id} with CTAS level {patient.CTAS_Level} has left the bed assignment queue at {self.env.now} mins")
 
@@ -257,12 +310,14 @@ class EDModel:
                 # is going to wait that time until it concluded and with that releases the nurse but not bed
                 sampled_service_time = random.expovariate(1.0 / self.parameters.bedAssignment)
                 yield self.env.timeout(sampled_service_time)
+        patient.bed_assignment_time_end = self.env.now
         print(f"Patient {patient.id} with CTAS level {patient.CTAS_Level} has been assigned a bed at {self.env.now} mins")
         self.env.process(self.initial_assessment(patient))
 
     
     #have to modify this
     def resuscitation(self,patient):
+        patient.resuscitation_time_arrival = self.env.now
         arrival = self.env.now
         
         # print patient ID an arrival at ED
@@ -271,7 +326,8 @@ class EDModel:
             yield req
 
             #resuscitation bed acquired
-            rBed_queue_time = self.env.now - arrival 
+            patient.resuscitation_time_bed = self.env.now
+            rBed_queue_time = patient.resuscitation_time_bed - patient.resuscitation_time_arrival
             with self.nurse.request(priority=0) as req1:
                     # wait until a nurse and bed is avaiable then lock both
                 yield req1
@@ -280,17 +336,21 @@ class EDModel:
 
                     yield req2
                     print(f"Patient {patient.id} with CTAS level {patient.CTAS_Level} has left the resuscitation queue at {self.env.now} mins" )
-                    PQT = self.env.now - arrival
+                    patient.resuscitation_time_nurse_doctor = self.env.now
+                    PQT = patient.registration_time - patient.resuscitation_time_arrival
+                    print(f"Patient {patient.id} waited {PQT} mins for the nurse and doctor")
                 
                     # sampled_xxxx_duration is getting a random value from the mean and then
                     # is going to wait that time until it concluded and with that releases the nurse but not bed
                     sampled_service_time = random.expovariate(1.0 / self.parameters.resuscitation)
                     yield self.env.timeout(sampled_service_time)
+        patient.resuscitation_time_end = self.env.now
         print(f"Patient {patient.id} with CTAS level {patient.CTAS_Level} has gone through resuscitation at {self.env.now} mins")
         self.env.process(self.bed_assignment(patient))
     
     #Initial Assessment: 
     def initial_assessment(self, patient):
+        patient.initial_assessment_time_arrival = self.env.now
         arrival = self.env.now
         print(f"Patient {patient.id} with CTAS level {patient.CTAS_Level} has entered the initial assessment queue at {arrival} mins")
 
@@ -299,15 +359,19 @@ class EDModel:
             yield req
             
             print(f"Patient {patient.id} with CTAS level {patient.CTAS_Level} has left the initial assessment queue at {self.env.now} mins")
-            PQT = self.env.now - arrival
+            patient.initial_assessment_time_doctor = self.env.now
+            PQT = patient.initial_assessment_time_doctor - patient.initial_assessment_time_arrival
+            print(f"Patient {patient.id} waited {PQT} mins for the doctor")
 
             sampled_service_time = random.expovariate(1.0/self.parameters.initialAssessment)
             yield self.env.timeout(sampled_service_time)
+        patient.initial_assessment_time_end = self.env.now
         print(f"Patient {patient.id} with CTAS level {patient.CTAS_Level} has gone through initial assessment at {self.env.now} mins")
         self.env.process(self.treatment(patient))
 
     #Treatment: 
     def treatment(self,patient):
+        patient.treatment_time_arrival = self.env.now
         arrival = self.env.now
         print(f"Patient {patient.id} with CTAS level {patient.CTAS_Level} has entered the treatment queue at {arrival} mins")
 
@@ -316,17 +380,21 @@ class EDModel:
             yield req
 
             print(f"Patient {patient.id} with CTAS level {patient.CTAS_Level} has left the treatment queue at {self.env.now} mins")
-            PQT = self.env.now - arrival
+            patient.treatment_time_nurse_doctor = self.env.now
+            PQT = patient.treatment_time_nurse_doctor - patient.treatment_time_arrival
+            print(f"Patient {patient.id} waited {PQT} mins for the nurse and doctor")
 
             # sampled_xxxx_duration is getting a random value from the mean and then
             # is going to wait that time until it concluded and with that releases the nurse and doctor
             sampled_service_time = random.expovariate(1.0 / self.parameters.treatment)
             yield self.env.timeout(sampled_service_time)
+        patient.treatment_time_end = self.env.now
         print(f"Patient {patient.id} with CTAS level {patient.CTAS_Level} has been treated at {self.env.now} mins")
         self.env.process(self.discharge_decision(patient))        
     
     #Discharge Decision
-    def discharge_decision(self, patient): 
+    def discharge_decision(self, patient):
+        patient.discharge_decision_time_arrival = self.env.now
         arrival = self.env.now 
         print(f"Patient {patient.id} with CTAS level {patient.CTAS_Level} has entered the discharge queue at {arrival} mins")
 
@@ -334,9 +402,16 @@ class EDModel:
 
         yield self.env.timeout(sampled_service_time)
 
+        # for every 24 hours we save the mean as a data point
         self.regular_beds.release(patient.bed)
         print(f"Patient {patient.id} with CTAS level {patient.CTAS_Level} has left the ed at {self.env.now} mins")
-        LOS = self.env.now - arrival
+
+        patient.discharge_decision_time_leaving = self.env.now
+        patient.calculate_Times()
+        
+        self.patientList.append(patient.convertToDict())
+
+        
     
     #snapshot evey 5 minutes
     #def snapshot(self):
@@ -345,20 +420,31 @@ class EDModel:
        #     print(f"Resource Queues: \nNurse: {self.nurse.queue} \nDoctor: {self.doctor.queue} \nBed: {self.regular_beds.queue} \nrBed: {self.resuscitation_beds.queue}")
     
     def run(self):
-        self.env.process(self.generate_walk_in_arrivals(10))
-        self.env.process(self.generate_ambulance_arrivals(10))
+
+        self.env.process(self.generate_walk_in_arrivals(50))
+        self.env.process(self.generate_ambulance_arrivals(50))
         #self.env.process(self.snapshot())
         self.env.run()
-
-
+        return self.patientList
 
 def runSim(simParameters):
     parameters = Data(simParameters)
-    print("Run 1")
-    ed_model = EDModel(parameters)
-    ed_model.run()
-    #ed model.run(until=parameters.length)
+    runList = []
+    for run in range(parameters.iterations):
+        print('--------------------------------------------------------------------------------')
+        print("Run ", run + 1, " of ", parameters.iterations, sep="")
+        ed_model = EDModel(parameters)
+        patientList = ed_model.run()
+        runList.extend(patientList)
+        
+        print(runList)    
+        Patient.p_id = 0
+        Patient.run_id += 1
+        print('--------------------------------------------------------------------------------')
+        #ed model.run(until=parameters.length)
 
+    df = Writer.ConvertToDataFrame(runList=runList)
+    Writer.writeToCsv(df)
 simParameters = {
     'resCapacity': {
         'doctor':1, 
@@ -400,7 +486,7 @@ simParameters = {
         }
 
     }, 
-    'iter':1, 
+    'iter':100,
     'warmUp':0, 
     'length':20
 }
