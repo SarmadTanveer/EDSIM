@@ -12,6 +12,7 @@ class Patient:
     # Simulation time in minutes
     arrival_time = 0  # Patient arrival time at ED
 
+    priority_assessment_time_arrival = 0  # time when entered priority_assessment
     priority_assessment_time = 0  # time when patient received the resources in priority_assessment
     priority_assessment_time_end = 0  # time when patients leaves priority_assessment
 
@@ -107,8 +108,8 @@ class Patient:
     def calculate_Times(self):
         self.los = self.discharge_decision_time_leaving - self.arrival_time
 
-        self.priority_assessment_wt = self.priority_assessment_time - self.arrival_time
-        self.priority_assessment_total_time = self.priority_assessment_time_end - self.arrival_time
+        self.priority_assessment_wt = self.priority_assessment_time - self.priority_assessment_time_arrival
+        self.priority_assessment_total_time = self.priority_assessment_time_end - self.priority_assessment_time_arrival
 
         self.ctas_assessment_wt = self.ctas_assessment_time - self.ctas_assessment_time_arrival
         self.ctas_assessment_total_time = self.ctas_assessment_time_end - self.ctas_assessment_time_arrival
@@ -122,7 +123,7 @@ class Patient:
         self.bed_assignment_time_wt = self.bed_assignment_wt_bed + self.bed_assignment_wt_nurse
         self.bed_assignment_time = self.bed_assignment_time_end - self.bed_assignment_time_arrival
 
-        self.resuscitation_wt_bed = self.resuscitation_time_bed - self.bed_assignment_time_arrival
+        self.resuscitation_wt_bed = self.resuscitation_time_bed - self.resuscitation_time_arrival
         self.resuscitation_wt_nurse_doctor = self.resuscitation_time_nurse_doctor - self.resuscitation_time_bed
         self.resuscitation_time_wt = self.resuscitation_wt_bed + self.resuscitation_wt_nurse_doctor
         self.resuscitation_time = self.resuscitation_time_end - self.resuscitation_time_arrival
@@ -152,7 +153,7 @@ class Patient:
                 'Discharge Time': self.discharge_decision_total_time, 
 
                 'Resuscitation Bed Queueing Time': self.resuscitation_wt_bed, 
-                'Resuscitation Queing Nurse/Doctor': self.resuscitation_time_nurse_doctor, 
+                'Resuscitation Queing Nurse/Doctor': self.resuscitation_wt_nurse_doctor,
 
 
                 'Bed Assignment Queue for Nurse': self.bed_assignment_wt_nurse, 
