@@ -22,6 +22,8 @@ def calculateSummary(dataframe):
 
     groupSizeByRunCTAS = sizeByGroup(dataframe)
     print(groupSizeByRunCTAS) 
+
+    bottleneckProcess,bottleneckTime = calcBottleNeck(dataframe)
     
     
 
@@ -95,10 +97,20 @@ def calculateSummary(dataframe):
                         'Resuscitation Bed': 4,  
 
                 }, 
-                'BottleNeck':3 
+                'BottleNeck': {
+                    'Process': bottleneckProcess, 
+                    'Avg Time' : bottleneckTime
+                }
                 }
     return summary
-                
+
+#Calculate process that takes the longest 
+def calcBottleNeck(Data): 
+    df = meanByGroup(Data, ['Run ID']).drop(columns=['Patient ID', 'Arrival', 'los', 'CTAS'])
+    max = df.max().max()
+    idx = df.max().idxmax()       
+    return (idx,max)     
+
 #get all parameter data grouped by run id and CTAS
 def meanByGroup(DataFrame,groupLabels = ['Run ID', 'CTAS']): 
     groupedDf = DataFrame.groupby(groupLabels)
@@ -131,6 +143,9 @@ def meanParAllData(dataframe,col):
 
 #example usage. get avg priority assessment queue time for ctas level 1 per run
 data = read_csv()
+
+print(calculateSummary(data))
+
 means = meanByGroup(data)
 #name of col must match exactly to df. use mean.keys() to verify
 meanPriorAssess = meanParByCTASperRun(means,'Priority Assessment Queue Time ')
