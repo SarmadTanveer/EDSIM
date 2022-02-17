@@ -117,7 +117,7 @@ def meanParByCTASperRun(groupMeans,col):
 
     return means
 
-#after grouping, get data only for specific data, returns a series
+#after grouping, get data only for specific CTAS Level, returns a series
 def getDataByCTASLevel(data, CTASLevel):
 
     levelDataFrame = data.xs(CTASLevel,level='CTAS')
@@ -129,5 +129,12 @@ def meanParAllData(dataframe,col):
 
 data = read_csv()
 
-print(calculateSummary(data))
+#example usage. get avg priority assessment queue time for ctas level 1 per run
+
+means = meanByGroup(data)
+#name of col must match exactly to df. use mean.keys() to verify
+meanPriorAssess = meanParByCTASperRun(means,'Priority Assessment Queue Time ')
+print(meanPriorAssess)
+meanPriorAssessforCTAS1 = getDataByCTASLevel(meanPriorAssess, 1)
+print(meanPriorAssessforCTAS1) 
 
