@@ -127,10 +127,10 @@ def getDataByCTASLevel(data, CTASLevel):
 def meanParAllData(dataframe,col): 
     return dataframe[col].mean()
 
-data = read_csv()
+
 
 #example usage. get avg priority assessment queue time for ctas level 1 per run
-
+data = read_csv()
 means = meanByGroup(data)
 #name of col must match exactly to df. use mean.keys() to verify
 meanPriorAssess = meanParByCTASperRun(means,'Priority Assessment Queue Time ')
