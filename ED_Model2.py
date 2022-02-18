@@ -23,8 +23,8 @@ class Writer:
     #def addPatientiToRQT(self,patient):
     #def getAllData(self):
     #def cleanFrame(self):
-    def writeToCsv(patientData):
-        patientData.to_csv('data.csv',index = False)
+    def writeToCsv(patientData, name):
+        patientData.to_csv(name,index = False)
 
     #def calcAvgPatientsPerRun(patientData): 
 
@@ -104,6 +104,8 @@ class EDModel:
 
         #list of patients during this run 
         self.patientList = []
+        self.resourceMonitor = []
+        self.resuscitationBedWait = []
 
 
     # this generates patients that walked in the ED
@@ -427,38 +429,52 @@ class EDModel:
 
         
     
-    #snapshot evey 5 minutes
-    #def snapshot(self):
-     #   while True:
-      #      yield self.env.timeout(5)
-       #     print(f"Resource Queues: \nNurse: {self.nurse.queue} \nDoctor: {self.doctor.queue} \nBed: {self.regular_beds.queue} \nrBed: {self.resuscitation_beds.queue}")
     
+    def snapshot(self):
+       while self.env.peek() < (self.parameters.length+self.parameters.warmUp):
+            self.resourceMonitor.append({'Time Stamp': self.env.now, 
+                                        'Nurse Queue Length':len(self.nurse.queue),
+                                        'Doctor Queue Length': len(self.doctor.queue), 
+                                        'Regular Bed Queue Length': len(self.regular_beds.queue), 
+                                        'Resuscitation Bed Queue Length': len(self.resuscitation_beds.queue)
+                                        }) 
+            prevPatientList = self.patientList.copy()
+            yield self.env.timeout(5)
+            
+
+
     def run(self):
 
         self.env.process(self.generate_walk_in_arrivals(50))
         self.env.process(self.generate_ambulance_arrivals(50))
-        #self.env.process(self.snapshot())
+        self.env.process(self.snapshot())
         self.env.run()
-        return self.patientList
+        return (self.patientList, self.resourceMonitor, self.resuscitationBedWait)
 
 def runSim(simParameters):
     parameters = Data(simParameters)
     runList = []
+    timeSeries = []
     for run in range(parameters.iterations):
         print('--------------------------------------------------------------------------------')
         print("Run ", run + 1, " of ", parameters.iterations, sep="")
         ed_model = EDModel(parameters)
-        patientList = ed_model.run()
+        patientList,timeList,resuscitationWait = ed_model.run()
         runList.extend(patientList)
+        timeSeries.extend(timeList)
+        
+        
         
         #print(runList)
         Patient.p_id = 0
         Patient.run_id += 1
         print('--------------------------------------------------------------------------------')
         #ed model.run(until=parameters.length)
-
+    print(timeSeries)
     df = Writer.ConvertToDataFrame(runList=runList)
-    Writer.writeToCsv(df)
+    df2 = Writer.ConvertToDataFrame(timeSeries)
+    Writer.writeToCsv(df,"PatientData.csv")
+    Writer.writeToCsv(df2,"SnapShotData.csv")
 simParameters = {
     'resCapacity': {
         'doctor':1, 
@@ -502,7 +518,7 @@ simParameters = {
     }, 
     'iter':5,
     'warmUp':0, 
-    'length':20
+    'length':300
 }
 
 runSim(simParameters)
