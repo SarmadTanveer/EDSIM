@@ -449,7 +449,7 @@ class EDModel:
         self.env.process(self.generate_ambulance_arrivals(50))
         self.env.process(self.snapshot())
         self.env.run()
-        return (self.patientList, self.resourceMonitor, self.resuscitationBedWait)
+        return (self.patientList, self.resourceMonitor)
 
 def runSim(simParameters):
     parameters = Data(simParameters)
