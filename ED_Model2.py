@@ -459,7 +459,7 @@ def runSim(simParameters):
         print('--------------------------------------------------------------------------------')
         print("Run ", run + 1, " of ", parameters.iterations, sep="")
         ed_model = EDModel(parameters)
-        patientList,timeList,resuscitationWait = ed_model.run()
+        patientList,timeList = ed_model.run()
         runList.extend(patientList)
         timeSeries.extend(timeList)
         
