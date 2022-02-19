@@ -3,9 +3,9 @@ import random
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
-import Statistics as s
 
-# Done in back-end
+# NOT USED ANYMORE, BUT WILL KEEP AS ED SIM MODEL EXAMPLE
+
 class Global_vars:
     """Storage object for global variables."""
 
@@ -32,7 +32,6 @@ class Global_vars:
         self.sim_duration = 5000
         self.warm_up = 1000
 
-# Done in back-end
 class Model:
     """ The model object holds the model and the methods directly relevant to the model."""
     
@@ -42,7 +41,6 @@ class Model:
         self.global_vars = Global_vars(docs, inter_arrival, appointment_time)
         self.env = simpy.Environment()
 
-    # Change values to match back-end
     def build_audit_results(self):
         """Compiles audit results into dataframe held in Glov_vars"""
         
@@ -64,44 +62,8 @@ class Model:
             self.global_vars.audit_patients_waiting_p3)
         
         self.global_vars.results['resources occupied'] = (
-            self.global_vars.audit_reources_used)
+            self.global_vars.audit_reources_used)       
 
-    #Mean LOS dataframe for each CTAS level
-    def los_chart(self, meanLOS):
-        meanLOSforCTAS1 = s.getDataByCTASLevel(meanLOS, 1)
-        meanLOSforCTAS2 = s.getDataByCTASLevel(meanLOS, 2)
-        meanLOSforCTAS3 = s.getDataByCTASLevel(meanLOS, 3)
-        meanLOSforCTAS4 = s.getDataByCTASLevel(meanLOS, 4)
-        meanLOSforCTAS5 = s.getDataByCTASLevel(meanLOS, 5)
-
-        fig, axs = plt.subplots(5,figsize=(10,17))
-        
-        # Subplot for each CTAS level
-        axs[0].plot(meanLOSforCTAS1, 'C0')
-        axs[0].set_xlabel('Run ID')
-        axs[0].set_ylabel('Mean length of stay (min)')
-        axs[0].set_title('Mean Patient Length of Stay per Run ID (CTAS 1-5)')
-
-        axs[1].plot(meanLOSforCTAS2, 'C1')
-        axs[1].set_xlabel('Run ID')
-        axs[1].set_ylabel('Mean length of stay (min)')
-
-        axs[2].plot(meanLOSforCTAS3, 'C2')
-        axs[2].set_xlabel('Run ID')
-        axs[2].set_ylabel('Mean length of stay (min)')
-
-        axs[3].plot(meanLOSforCTAS4, 'C3')
-        axs[3].set_xlabel('Run ID')
-        axs[3].set_ylabel('Mean length of stay (min)')
-
-        axs[4].plot(meanLOSforCTAS5, 'C4')
-        axs[4].set_xlabel('Run ID')
-        axs[4].set_ylabel('Mean length of stay (min)')
-
-        return fig
-        
-
-    # Done in back-end
     def perform_audit(self):
         """Monitors modelled ED at regular intervals (as defined by audit 
         interval in self.global_vars)"""
@@ -150,24 +112,11 @@ class Model:
         # The saved results are the raw audit data
         self.build_audit_results()
 
-        #Read dataframe from csv
-        results_df = s.read_csv()
-
-        #Group dataframe by Run ID and CTAS Level
-        means = s.meanByGroup(results_df)
-
-        #Mean LOS of grouped dataframe
-        meanLOS = s.meanParByCTASperRun(means,'los')
-
-        # Get LOS chart for each CTAS level
-        los_chart_output = self.los_chart(meanLOS)
-
         # Get text summary of results
         text_output = self.summarise()
 
-        return los_chart_output, text_output
+        return text_output
 
-    # Done in back-end
     def see_doc(self, p):
         """Mangages waiting for doctor resorce. Records time waiting to see doc""" 
         
@@ -192,7 +141,6 @@ class Model:
             # reference to patient and Python then automatically cleans up)
             del Patient.all_patients[p.id]
 
-    # Change values to match back-end
     def summarise(self):
         """Produces displayed text summary of model run"""
         
@@ -218,7 +166,6 @@ class Model:
 
         return text
     
-    # Done in back-end
     def trigger_admissions(self):
         """Produces patient arrivals. Initialises a patient object (from Patient class), 
         passes the patient over to the see_doc method, and sets the next admission
@@ -238,7 +185,6 @@ class Model:
             # Schedule next admission
             yield self.env.timeout(next_admission)
 
-# Done in back-end
 class Patient:
     """Class of patient objects. The class also holds a list of all patient objects in 
     all_patients dictionary"""
@@ -265,7 +211,6 @@ class Patient:
         # 1 is subtracted from priority to align priority (1-3) with zero indexed list (0-2)
         self.global_vars.patients_waiting_by_priority[self.priority - 1] += 1
 
-# Done in back-end
 class Resources:
     """Resources required by processes in the model.
     Just holds doctors as the only limiting resorce"""
